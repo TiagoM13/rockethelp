@@ -2,10 +2,10 @@ import { Heading, Icon, VStack, useTheme } from "native-base";
 import { Envelope, Key } from "phosphor-react-native";
 import React, { useState } from "react";
 
-import Logo from "../assets/logo_primary.svg";
+import Logo from "@app/assets/logo_primary.svg";
 
-import { Input } from "../components/Input";
-import { Button } from "../components/Button";
+import { Input } from "@app/components/Input";
+import { Button } from "@app/components/Button";
 
 const screens = () => {
   const [name, setName] = useState("");
