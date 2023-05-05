@@ -1,22 +1,24 @@
 import React from "react";
-import { VStack, Text, useTheme, HStack, ScrollView } from "native-base";
+import { Alert } from "react-native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { VStack, Text, useTheme, HStack, ScrollView, Box } from "native-base";
 import firestore from "@react-native-firebase/firestore";
-
-import { Header } from "@app/components/Header";
-import { useRoute } from "@react-navigation/native";
-import { OrderProps } from "@app/entities/order";
-import { OrderFirestoreDTO } from "@app/DTOs/OrderFirestoreDTO";
-import { dateFormat } from "@app/utils/firestoreDateFormat";
 import {
   CircleWavyCheck,
-  Clipboard,
+  ClipboardText,
   DesktopTower,
   Hourglass,
 } from "phosphor-react-native";
-import { CardDetails } from "@app/components/CardDetails";
+
+import { OrderProps } from "@app/entities/order";
+import { dateFormat } from "@app/utils/firestoreDateFormat";
+import { OrderFirestoreDTO } from "@app/DTOs/OrderFirestoreDTO";
+
 import { Input } from "@app/components/Input";
+import { Header } from "@app/components/Header";
 import { Button } from "@app/components/Button";
 import { Loading } from "@app/components/Loading";
+import { CardDetails } from "@app/components/CardDetails";
 
 type RouteParams = {
   orderId: string;
@@ -24,8 +26,8 @@ type RouteParams = {
 
 type OrderDetails = OrderProps & {
   description: string;
-  solution: string;
-  closed: string;
+  solution?: string;
+  closed?: string | null;
 };
 
 const Details = () => {
@@ -35,7 +37,34 @@ const Details = () => {
 
   const { colors } = useTheme();
   const route = useRoute();
+  const navigation = useNavigation();
   const { orderId } = route.params as RouteParams;
+
+  function handleOrderClose() {
+    if (!solution) {
+      Alert.alert(
+        "Solicitação",
+        "Informe a solução para encerrar a solicitação."
+      );
+    }
+
+    firestore()
+      .collection<OrderFirestoreDTO>("orders")
+      .doc(orderId)
+      .update({
+        status: "closed",
+        solution,
+        closed_at: firestore.FieldValue.serverTimestamp(),
+      })
+      .then(() => {
+        Alert.alert("Solicitação", "Solicitação encerrada.");
+        navigation.goBack();
+      })
+      .catch((error) => {
+        console.log(error);
+        Alert.alert("Solicitação", "Não foi possível encerrar a solicitação.");
+      });
+  }
 
   React.useEffect(() => {
     firestore()
@@ -74,7 +103,9 @@ const Details = () => {
 
   return (
     <VStack flex={1} bg="gray.700">
-      <Header title="solicitação" />
+      <Box px={6} bg="gray.600">
+        <Header title="solicitação" />
+      </Box>
 
       <HStack bg="gray.500" justifyContent="center" p={4}>
         {order.status === "closed" ? (
@@ -102,31 +133,36 @@ const Details = () => {
           title="equipamento"
           description={`Patrimônio ${order.patrimony}`}
           icon={DesktopTower}
-          footer={order.when}
         />
 
         <CardDetails
           title="descrição do problema"
           description={order.description}
-          icon={Clipboard}
+          icon={ClipboardText}
+          footer={`Registrado em ${order.when}`}
         />
 
         <CardDetails
           title="solução"
           icon={CircleWavyCheck}
+          description={order.solution}
           footer={order.closed && `Encerrado em ${order.closed}`}
         >
-          <Input
-            placeholder="Descrição da solução"
-            onChangeText={setSolution}
-            textAlignVertical="top"
-            multiline
-            h={24}
-          />
+          {order.status === "open" && (
+            <Input
+              placeholder="Descrição da solução"
+              onChangeText={setSolution}
+              textAlignVertical="top"
+              multiline
+              h={24}
+            />
+          )}
         </CardDetails>
       </ScrollView>
 
-      {order.status === "open" && <Button title="Encerrar solicitação" m={5} />}
+      {order.status === "open" && (
+        <Button title="Encerrar solicitação" m={5} onPress={handleOrderClose} />
+      )}
     </VStack>
   );
 };
