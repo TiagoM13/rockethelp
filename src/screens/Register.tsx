@@ -28,7 +28,7 @@ const Register = () => {
         patrimony,
         description,
         status: "open",
-        created_at: new Date("pt-BR"),
+        created_at: firestore.FieldValue.serverTimestamp(),
       })
       .then(() => {
         Alert.alert("Solicitação", "Solicitação registrada com sucesso.");
@@ -46,7 +46,7 @@ const Register = () => {
 
   return (
     <VStack flex={1} p={6} bg="gray.600">
-      <Header title="Nova solicitação" />
+      <Header title="Solicitação" />
 
       <Input
         placeholder="Número do patrimônio"
